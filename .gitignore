@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# 环境变量文件（不要提交敏感信息）
+.env
+
+# 数据文件
+data/
+*.pth
+*.pt
+*.ckpt
+
+# 日志文件
+logs/
+*.log
+
+# 检查点
+checkpoints/
+samples/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Jupyter
+.ipynb_checkpoints/
+
+# 系统文件
+.DS_Store
+Thumbs.db
+

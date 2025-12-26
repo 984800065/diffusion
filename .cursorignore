@@ -1,0 +1,6 @@
+data/
+run/
+logs/
+model_ckpts/
+samples/
+.env
