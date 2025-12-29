@@ -1,5 +1,5 @@
 data/
-run/
+runs/
 logs/
 model_ckpts/
 samples/

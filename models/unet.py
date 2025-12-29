@@ -225,11 +225,8 @@ class DDPMUnet(nn.Module):
                 down.append(DownBlock(tmp_down_in_channels, down_out_channels, n_channels * 4, is_attn[i]))
                 self.skip_channels.append(down_out_channels)
                 tmp_down_in_channels = down_out_channels
-
             if i < n_resolutions - 1: 
                 down.append(DownSample(down_out_channels))
-                self.skip_channels.append(down_out_channels)
-
         self.down = nn.ModuleList(down)
         
         middle_out_channels = middle_in_channels = down_out_channels
@@ -237,14 +234,12 @@ class DDPMUnet(nn.Module):
 
         up = []
         for i in range(n_resolutions):
-            for _ in range(num_res_blocks + (i < n_resolutions - 1)):
+            if i > 0:
+                up.append(UpSample(self.skip_channels[-1]))
+            for _ in range(num_res_blocks):
                 tmp_up_in_channels = self.skip_channels.pop()
                 assert len(self.skip_channels) > 0, "skip_channels must be non-empty"
                 up.append(UpBlock(tmp_up_in_channels + tmp_up_in_channels, self.skip_channels[-1], n_channels * 4, is_attn[i]))
-
-            if i < n_resolutions - 1:
-                up.append(UpSample(self.skip_channels[-1]))
-
         self.up = nn.ModuleList(up)
 
         self.norm = nn.GroupNorm(8, n_channels)
@@ -256,15 +251,15 @@ class DDPMUnet(nn.Module):
         t = self.time_embedding(t)
         h = [x]
 
-        channal_increase_time = 0
         for down_layer in self.down:
-            x = down_layer(x, t)
-            h.append(x)
-            channal_increase_time += 1
+            if isinstance(down_layer, DownSample):
+                x = down_layer(x, t)
+            else:
+                x = down_layer(x, t)
+                h.append(x)
         
         x = self.middle(x, t)
 
-        channal_decrease_time = 0
         for up_layer in self.up:
             if isinstance(up_layer, UpSample):
                 x = up_layer(x, t)
@@ -272,6 +267,5 @@ class DDPMUnet(nn.Module):
                 s = h.pop()
                 x = torch.cat([x, s], dim=1)
                 x = up_layer(x, t)
-                channal_decrease_time += 1
         
         return self.final(self.act(self.norm(x)))
