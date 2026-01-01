@@ -33,7 +33,7 @@ def train(
         imgs: torch.Tensor
         
         # 创建 tqdm 进度条
-        pbar = tqdm(enumerate(train_loader), total=len(train_loader), desc=f"Epoch {epoch}")
+        pbar = tqdm(enumerate(train_loader), total=len(train_loader), desc=f"Epoch {epoch + 1}")
         
         for batch_idx, imgs in pbar:
             imgs = imgs.to(device)
@@ -50,7 +50,7 @@ def train(
             # if batch_idx % 100 == 0:
             #     logger.info(f"Epoch {epoch}, Batch {batch_idx}, Loss: {loss.item()}")
 
-        logger.info(f"Epoch {epoch}, Avg epoch loss: {total_loss / total_samples:.6f}")
+        logger.info(f"Epoch {epoch + 1}, Avg epoch loss: {total_loss / total_samples:.6f}")
         writer.add_scalar("Loss/train", total_loss / total_samples, epoch)
     writer.close()
 
@@ -68,9 +68,10 @@ def main():
     ddpm_unet = DDPMUnet(
         image_channels=image_channels,
         n_channels=config.model_channels,
-        channel_mults=[1, 2, 2, 2],
+        channel_mults=[1, 2, 2, 4],
         is_attn=[False, False, False, False],
         num_res_blocks=config.num_res_blocks,
+        time_embedding_type=config.time_embedding_type,
     )
     ddpm_model = DenoisingDiffusionProbabilisticModel(
         eps_model=ddpm_unet,

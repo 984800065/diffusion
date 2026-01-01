@@ -14,7 +14,8 @@ logger.remove()
 LOG_FORMAT = (
     "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
     "<level>{level: <8}</level> | "
-    "<cyan>{function}</cyan>:<cyan>{file.path}</cyan>:<cyan>{line}</cyan> | "
+    "<cyan>{file.path}</cyan>:<cyan>{line}</cyan> | "
+    "<cyan>{function}</cyan> | "
     "<level>{message}</level>"
 )
 

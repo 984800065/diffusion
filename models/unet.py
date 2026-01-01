@@ -29,6 +29,23 @@ class TimeEmbedding(nn.Module):
         return emb
 
 
+class TimeEmbeddingSimple(nn.Module):
+    def __init__(
+        self,
+        time_channels: int,
+    ):
+        super().__init__()
+        self.time_channels = time_channels
+
+    def forward(self, t: torch.Tensor) -> torch.Tensor:
+        half_dim = self.time_channels // 2
+        emb = math.log(10000) / (half_dim - 1)
+        emb = torch.exp(torch.arange(half_dim, device=t.device) * -emb)
+        emb = t[:, None] * emb[None, :]
+        emb = torch.cat((emb.sin(), emb.cos()), dim=1)
+        return emb
+
+
 class ResidualBlock(nn.Module):
     def __init__(
         self,
@@ -146,6 +163,7 @@ class DownBlock(nn.Module):
 class DownSample(nn.Module):
     def __init__(self, n_channels: int):
         super().__init__()
+        # H_{out} = (H_{in} + 2p - k) / s + 1
         self.conv = nn.Conv2d(n_channels, n_channels, kernel_size=3, padding=1, stride=2)
     
     def forward(self, x: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
@@ -191,7 +209,8 @@ class UpBlock(nn.Module):
 class UpSample(nn.Module):
     def __init__(self, n_channels: int):
         super().__init__()
-        self.tconv = nn.ConvTranspose2d(n_channels, n_channels, kernel_size = 4, stride = 2, padding = 1)
+        # H_{out} = (H_{in} - 1) * s - 2p + k + output_padding
+        self.tconv = nn.ConvTranspose2d(n_channels, n_channels, kernel_size=4, stride=2, padding=1)
 
     def forward(self, x: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
         _ = t
@@ -206,13 +225,20 @@ class DDPMUnet(nn.Module):
         channel_mults: list[int] = [1, 2, 2, 2], 
         is_attn: list[bool] = [False, False, False, False], 
         num_res_blocks: int = 2,
+        time_embedding_type: str = "full",
     ):
         super().__init__()
         n_resolutions = len(channel_mults)
         # (B, 3, H, W) -> (B, C, H, W)
         self.image_projection = nn.Conv2d(image_channels, n_channels, kernel_size=3, padding=1)
         # (B, C * 4)
-        self.time_embedding = TimeEmbedding(n_channels * 4)
+        # self.time_embedding = TimeEmbedding(n_channels * 4)
+        if time_embedding_type == "simple":
+            self.time_embedding = TimeEmbeddingSimple(n_channels * 4)
+        elif time_embedding_type == "full":
+            self.time_embedding = TimeEmbedding(n_channels * 4)
+        else:
+            raise ValueError(f"Invalid time embedding type: {time_embedding_type}")
 
         # (B, C, H, W) -> (B, C * \prod\limits_{i=0}^{n_resolutions-1} channel_mults[i], H // 2 ** (n_resolutions - 1), W // 2 ** (n_resolutions - 1))
         down = []

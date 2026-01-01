@@ -69,6 +69,8 @@ def show_images(image_list: list[Image.Image], save_dir: str | None = None):
             axes[i // plot_width, i % plot_width].imshow(image)
         axes[i // plot_width, i % plot_width].axis('off')
     plt.tight_layout()
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
     if save_dir is not None:
         plt.savefig(f"{save_dir}/sample.png", dpi=150, bbox_inches='tight')
     plt.show()
@@ -83,7 +85,7 @@ def save_images(image_list: list[Image.Image], save_dir: str | None = None):
 def main():
     device = torch.device(f"cuda:{config.gpu_id}" if torch.cuda.is_available() else "cpu")
     logger.info(f"Using device: {device}")
-    image_channels = 1
+    image_channels = 1 if config.dataset == "mnist" else 3
     image_size = (32, 32)
     ddpm_unet = DDPMUnet(
         image_channels=image_channels,
@@ -91,6 +93,7 @@ def main():
         channel_mults=[1, 2, 2, 2],
         is_attn=[False, False, False, False],
         num_res_blocks=config.num_res_blocks,
+        time_embedding_type=config.time_embedding_type,
     )
     ddpm_model = DenoisingDiffusionProbabilisticModel(
         eps_model=ddpm_unet,
@@ -105,7 +108,7 @@ def main():
     # sample
     image_list = sample(
         ddpm_model=ddpm_model,
-        num_samples=16,
+        num_samples=9,
         image_channels=image_channels,
         image_size=image_size,
         device=device,

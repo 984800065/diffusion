@@ -48,11 +48,14 @@ class Config(BaseSettings):
     model_channels: int = Field(default=128, description="模型通道数")
     num_res_blocks: int = Field(default=2, description="残差块数")
     learning_rate: float = Field(default=1e-4, description="学习率")
-    num_epochs: int = Field(default=100, description="训练轮数")
+    num_epochs: int = Field(default=10, description="训练轮数")
     save_path: str = Field(default="./model_ckpts", description="模型保存路径")
 
     # 采样配置
     sample_path: str = Field(default="./samples", description="采样图片保存路径")
+
+    # 时间嵌入配置
+    time_embedding_type: str = Field(default="full", description="时间嵌入类型")
     
     # 列表配置示例（需要在 .env 中用逗号分隔）
     # channel_multipliers: List[int] = Field(default=[1, 2, 4], description="通道倍数")
